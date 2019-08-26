@@ -302,7 +302,7 @@ void disasm(unsigned long int start, unsigned long int end) {
 	address = start;
 	if (address < romstart) {
 		printf("Address < RomStart in disasm()!\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	char operand_s[100];
