@@ -369,7 +369,7 @@ void disasm(unsigned long int start, unsigned long int end) {
 						switch(opnum) {
 							case  2 : sprintf(opcode_s, "ADD.%c", size_arr[size]);
 								break;
-							case  7 : sprintf(opcode_s,"AND.%c", size_arr[size]);
+							case  7 : sprintf(opcode_s, "AND.%c", size_arr[size]);
 								break;
 							case 31 : sprintf(opcode_s, "EOR.%c", size_arr[size]);
 								break;
@@ -1161,8 +1161,9 @@ void disasm(unsigned long int start, unsigned long int end) {
 						if (dmode == 1) break;
 						if (dmode >= 9) break;
 						if (size == 3) break;
+						/* size: 0=B, 1=W, 2=L */
 
-						sprintf(opcode_s, "TST ");
+						sprintf(opcode_s, "TST.%c", size_arr[size]);
 						sprintmode(dmode, dreg, size, operand_s);
 						decoded = true;
 					} break;
