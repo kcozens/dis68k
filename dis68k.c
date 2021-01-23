@@ -63,7 +63,11 @@ struct MapEntry {
 	uint32_t end;
 	enum Type {
 		End,
-		Data,
+		Byte,
+		Word,
+		Long,
+		Text,
+		Rsvd,
 		Code
 	} type;
 } *map = NULL;
@@ -136,11 +140,15 @@ bool readmap(const char *filename) {
 				map[index].start = start;
 				map[index].end = end;
 				map[index].type = End;
-				if(strcmp(type,"data")==0) map[index].type = Data;
+				if(strcmp(type,"byte")==0) map[index].type = Byte;
+				if(strcmp(type,"word")==0) map[index].type = Word;
+				if(strcmp(type,"long")==0) map[index].type = Long;
+				if(strcmp(type,"text")==0) map[index].type = Text;
+				if(strcmp(type,"rsvd")==0) map[index].type = Rsvd;
 				if(strcmp(type,"code")==0) map[index].type = Code;
 
 				if (map[index].type == End) {
-					fprintf(stderr, "Couldn't parse type in map file at line %lu ('code' or 'data' misspelt)\n", index+2);
+					fprintf(stderr, "Couldn't parse type '%s' in map file at line %lu\n", type, index+2);
 					return false;
 				}
 				++ index;
@@ -160,6 +168,14 @@ bool readmap(const char *filename) {
 	return true;
 }
 
+void print_address(uint32_t address) {
+	if (!rawmode) {
+		printf("%08x : ", address);
+	} else {
+		printf("        ");
+	}
+}
+
 /*!
 	Gets and echoes the next byte from stdin and increments the global @c address;
 	if stdin is exhausted, prints an error and causes the program to exit with
@@ -172,16 +188,15 @@ unsigned int getbyte() {
 		exit(EXIT_FAILURE);
 	}
 	++ address;
-	printf("%02x ", byte);
 	return byte;
 }
 
 /*!
-	Gets and echoes the next word from stdin and increments the global @c address twice;
+	Gets the next word from stdin and increments the global @c address twice;
 	if stdin is exhausted, prints an error and causes the program to exit with
 	code EXIT_FAILURE.
 */
-int getword() {
+int getword_noprint() {
 	int word = fgetc(stdin) << 8;
 	word |= fgetc(stdin);
 
@@ -191,6 +206,17 @@ int getword() {
 	}
 
 	address += 2;
+	return word;
+}
+
+/*!
+	Gets and echoes the next word from stdin and increments the global @c address twice;
+	if stdin is exhausted, prints an error and causes the program to exit with
+	code EXIT_FAILURE.
+*/
+int getword() {
+	int word = getword_noprint();
+
 	if (!rawmode) {
 		printf("%04x ", word);
 	}
@@ -308,11 +334,7 @@ void disasm(unsigned long int start, unsigned long int end) {
 	char operand_s[100];
 
 	while (!feof(stdin) && (address < end)) {
-		if (!rawmode) {
-			printf("%08x : ", address);
-		} else {
-			printf("        ");
-		}
+		print_address(address);
 		const uint32_t start_address = address;
 		const int word = getword();
 		bool decoded = false;
@@ -1193,44 +1215,136 @@ void disasm(unsigned long int start, unsigned long int end) {
 	}
 }
 
-/*!
-	Consumes end - start input bytes and outputs them as a data segment;
-	at exit the global @c address is equal to @c end.
-
-	Any bytes that are within the printable character range are output as
-	those characters; full stops fill in for unprintable characters.
-*/
-void datadump(uint32_t start, uint32_t end) {
+void dumpbytes(uint32_t start, uint32_t end) {
 	address = start;
 	if (address < romstart) {
-		fprintf(stderr, "Address < RomStart in datadump()!\n");
+		fprintf(stderr, "Address < RomStart in dumpbytes()!\n");
 		exit(EXIT_FAILURE);
 	}
 
 	while (!feof(stdin) && (address <= end)) {
-		printf("%08x : ", address);
-
 		const uint32_t remaining_bytes = end - address + 1;
-		const int  bytes_to_print = (remaining_bytes > 16) ? 16 : remaining_bytes;
+		int bytes_to_print = (remaining_bytes > 8) ? 8 : remaining_bytes;
 
-		int toprint[16] ;
-		for (int i = 0; i < 16; ++i) {
-			if (i >= bytes_to_print)
-				printf("   ");
-			else
-				toprint[i] = getbyte();
-		}
-		printf("  ");
-		for (int i = 0; i < 16; ++i) {
-			const int byte = toprint[i];
-			if (i >= bytes_to_print)
-				printf(" ");
-			else if (isprint(byte))
-				printf("%c", byte);
-			else
-				printf(".");
+		print_address(address);
+		printf("%-9s", "dc.b");
+
+		while (bytes_to_print-- > 0) {
+			const int byte = getbyte();
+			printf("$%02x", byte);
+			if (bytes_to_print > 0) {
+				printf(", ");
+			}
 		}
 		fputc('\n', stdout);
+	}
+}
+
+void dumpwords(uint32_t start, uint32_t end) {
+	address = start;
+	if (address < romstart) {
+		fprintf(stderr, "Address < RomStart in dumpwords()!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	while (!feof(stdin) && (address <= end)) {
+		const uint32_t remaining_words = (end - address + 1) / 2;
+		int words_to_print = (remaining_words > 8) ? 8 : remaining_words;
+
+		print_address(address);
+		printf("%-9s", "dc.w");
+
+		while (words_to_print-- > 0) {
+			const int word = getword_noprint ();
+			printf("$%04x", word);
+			if (words_to_print > 0)
+				printf(", ");
+		}
+		fputc('\n', stdout);
+	}
+}
+
+void dumplongs(uint32_t start, uint32_t end) {
+	address = start;
+	if (address < romstart) {
+		fprintf(stderr, "Address < RomStart in dumplongs()!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	while (!feof(stdin) && (address <= end)) {
+		uint32_t remaining_longs = (end - address + 1) / 4;
+		int longs_to_print = (remaining_longs > 4) ? 4 : remaining_longs;
+
+		print_address(address);
+		printf("%-9s", "dc.l");
+
+		while (longs_to_print-- > 0) {
+			const int word1 = getword_noprint ();
+			const int word2 = getword_noprint ();
+			printf("$%04x%04x", word1, word2);
+			if (longs_to_print > 0)
+				printf(", ");
+		}
+		fputc('\n', stdout);
+	}
+}
+
+void dumptext(uint32_t start, uint32_t end) {
+	address = start;
+	if (address < romstart) {
+		fprintf(stderr, "Address < RomStart in dumptext()!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	while (!feof(stdin) && (address <= end)) {
+		const uint32_t remaining_bytes = end - address + 1;
+		int bytes_to_print = (remaining_bytes > 48) ? 48 : remaining_bytes;
+		int quote = false;
+
+		print_address(address);
+		printf("%-9s", "dc.b");
+
+		while (bytes_to_print-- > 0) {
+			const int byte = getbyte();
+			if (isprint(byte)) {
+				if (!quote) {
+					printf("'");
+					quote = true;
+				}
+				printf("%c", byte);
+			} else {
+				if (quote) {
+					printf("', ");
+					quote = false;
+				}
+				printf("$%02x", byte);
+				if (bytes_to_print > 0) {
+					printf(", ");
+				}
+			}
+		}
+		if (quote) {
+			printf("'");
+			quote = false;
+		}
+		fputc('\n', stdout);
+	}
+}
+
+void rsvdblock(uint32_t start, uint32_t end) {
+	address = start;
+	if (address < romstart) {
+		fprintf(stderr, "Address < RomStart in rsvdblock()!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	uint32_t bytes_to_skip = end - start + 1;
+
+	print_address(address);
+	printf("%-9s%u\n", "ds.b", bytes_to_skip);
+
+	while (bytes_to_skip--) {
+		(void)getbyte();
 	}
 }
 
@@ -1291,8 +1405,12 @@ int main(int argc, char *argv[]) {
 	size_t index = 0;
 	while (map[index].type != End) {
 		printf(index ? "\n" : "");
-		if (map[index].type == Data) datadump(map[index].start, map[index].end);
-		if (map[index].type == Code) disasm(map[index].start, map[index].end);
+		if (map[index].type == Byte) dumpbytes(map[index].start, map[index].end);
+		if (map[index].type == Word) dumpwords(map[index].start, map[index].end);
+		if (map[index].type == Long) dumplongs(map[index].start, map[index].end);
+		if (map[index].type == Text) dumptext(map[index].start,  map[index].end);
+		if (map[index].type == Rsvd) rsvdblock(map[index].start, map[index].end);
+		if (map[index].type == Code) disasm(map[index].start,    map[index].end);
 		++ index;
 	}
 	return 0;
