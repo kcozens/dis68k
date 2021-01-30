@@ -100,12 +100,8 @@ bool readmap(const char *filename) {
     size_t allocated_map_size = 16;
     map = (struct MapEntry *)malloc(sizeof(struct MapEntry) * allocated_map_size);
 
-    if (!filename || !(fmap = fopen(filename, "rt"))) {
-        if (filename) {
-            fprintf(stderr, "Couldn't open %s as a map file\n", filename);
-            return false;
-        }
-
+    fmap = fopen(filename, "rt");
+    if (fmap == NULL) {
         romstart = 0;
         map[0].start = 0L;
         map[0].end = 0xffffffff;
@@ -1388,7 +1384,18 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        if (!strcmp(argv[argument], "-m") && argument+1 != argc) {
+        if (strncmp(argv[argument], "-m", 2) == 0) {
+            if (argv[argument][2] != '\0') {
+                mapfilename = &argv[argument][2];
+                ++argument;
+                continue;
+            }
+
+            if (argument+1 >= argc) {
+                fprintf(stderr, "Missing name of map file\n");
+                return EXIT_FAILURE;
+            }
+
             mapfilename = argv[argument+1];
             argument += 2;
             continue;
