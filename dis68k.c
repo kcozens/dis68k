@@ -140,12 +140,12 @@ bool readmap(const char *filename) {
                 map[index].start = start;
                 map[index].end = end;
                 map[index].type = End;
-                if(strcmp(type,"byte")==0) map[index].type = Byte;
-                if(strcmp(type,"word")==0) map[index].type = Word;
-                if(strcmp(type,"long")==0) map[index].type = Long;
-                if(strcmp(type,"text")==0) map[index].type = Text;
-                if(strcmp(type,"rsvd")==0) map[index].type = Rsvd;
-                if(strcmp(type,"code")==0) map[index].type = Code;
+                if (strcmp(type,"byte")==0) map[index].type = Byte;
+                if (strcmp(type,"word")==0) map[index].type = Word;
+                if (strcmp(type,"long")==0) map[index].type = Long;
+                if (strcmp(type,"text")==0) map[index].type = Text;
+                if (strcmp(type,"rsvd")==0) map[index].type = Rsvd;
+                if (strcmp(type,"code")==0) map[index].type = Code;
 
                 if (map[index].type == End) {
                     fprintf(stderr, "Couldn't parse type '%s' in map file at line %lu\n", type, index+2);
@@ -153,7 +153,7 @@ bool readmap(const char *filename) {
                 }
                 ++ index;
             } else {
-                if(items_read > 0) {
+                if (items_read > 0) {
                     fprintf(stderr, "Syntax error on line %lu (%d)\n", index+2, items_read);
                     return false;
                 }
@@ -1353,7 +1353,7 @@ int main(int argc, char *argv[]) {
     int argument = 1;
     while(argument < argc) {
         // Output plain help?
-        if(!strcmp(argv[argument], "-h") || !strcmp(argv[argument], "--help")) {
+        if (!strcmp(argv[argument], "-h") || !strcmp(argv[argument], "--help")) {
             printf("Usage: %s [-m mapfile] [-r]\n", argv[0]);
             printf("Reads a binary file from stdin; prints disassembly to stdout.\n");
             printf("If a mapfile is specified, it can be used to demark code and data segments.\n");
@@ -1368,7 +1368,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Output version history?
-        if(!strcmp(argv[argument], "-v")) {
+        if (!strcmp(argv[argument], "-v")) {
             printf("Revision list : 1.0  13/02/91\n");
             printf("                1.1  05/03/91 : Reglist upgraded.\n");
             printf("                                .MAP file added.\n");
@@ -1382,13 +1382,13 @@ int main(int argc, char *argv[]) {
             return EXIT_SUCCESS;
         }
 
-        if(!strcmp(argv[argument], "-r")) {
+        if (!strcmp(argv[argument], "-r")) {
             rawmode = true;
             ++ argument;
             continue;
         }
 
-        if(!strcmp(argv[argument], "-m") && argument+1 != argc) {
+        if (!strcmp(argv[argument], "-m") && argument+1 != argc) {
             mapfilename = argv[argument+1];
             argument += 2;
             continue;
