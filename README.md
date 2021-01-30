@@ -4,7 +4,9 @@ _dis68k_ is a public domain disassembler for the 68000 by W. de Waal,
 originally developed in 1991 and written in era-appropriate unstandardised C.
 It was released into the public domain in 1993.
 
-This fork of dis68k seeks to modernise that source code:
+This fork of dis68k was forked from the fork created by Thomas Harte. The
+Thomas Harte fork seeked to modernise the original source code written by
+W. de Waal:
 * to ensure that it builds with modern compilers;
 * to give it normative command-line invocation; and
 * where possible, to adapt the code to utilise more modern language constructs.
@@ -33,8 +35,11 @@ Example map file:
 This says:
 
 1. the input file data should be located at address `FC0000`.
-2. treat the region starting at `FF0000` and ending at `FC002F` as data.
+2. treat the region starting at `FF0000` and ending at `FC002F` as bytes.
 3. treat the region starting at `FC0030` and ending at `FEFFFF` as code.
+
+The region types that can be specified are:
+    byte, word, long, text, rsvd, and code.
 
 Map files are specified to the disassembler using the `-m` option, e.g.
 
