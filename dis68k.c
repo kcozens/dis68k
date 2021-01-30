@@ -1419,12 +1419,16 @@ int main(int argc, char *argv[]) {
         }
 
         printf(index ? "\n" : "");
-        if (map[index].type == Byte) dumpbytes(map[index].start, map[index].end);
-        if (map[index].type == Word) dumpwords(map[index].start, map[index].end);
-        if (map[index].type == Long) dumplongs(map[index].start, map[index].end);
-        if (map[index].type == Text) dumptext(map[index].start,  map[index].end);
-        if (map[index].type == Rsvd) rsvdblock(map[index].start, map[index].end);
-        if (map[index].type == Code) disasm(map[index].start,    map[index].end);
+        switch (map[index].type) {
+            case Byte: dumpbytes(map[index].start, map[index+1].start); break;
+            case Word: dumpwords(map[index].start, map[index+1].start); break;
+            case Long: dumplongs(map[index].start, map[index+1].start); break;
+            case Text: dumptext(map[index].start,  map[index+1].start); break;
+            case Rsvd: rsvdblock(map[index].start, map[index+1].start); break;
+            case Code: disasm(map[index].start,    map[index+1].start); break;
+            default:
+                break;
+        }
         ++ index;
     }
     return 0;
