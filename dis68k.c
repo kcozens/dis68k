@@ -1404,6 +1404,13 @@ int main(int argc, char *argv[]) {
 
 	size_t index = 0;
 	while (map[index].type != End) {
+		if (map[index].start > map[index].end)
+		{
+			fprintf(stderr, "Start address %x > End address %x in line %ld\n",
+			map[index].start, map[index].end, index);
+			return EXIT_FAILURE;
+		}
+
 		printf(index ? "\n" : "");
 		if (map[index].type == Byte) dumpbytes(map[index].start, map[index].end);
 		if (map[index].type == Word) dumpwords(map[index].start, map[index].end);
