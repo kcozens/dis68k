@@ -322,11 +322,6 @@ int getmode(int instruction) {
 
 void disasm(unsigned long int start, unsigned long int end) {
     address = start;
-    if (address < romstart) {
-        printf("Address < RomStart in disasm()!\n");
-        exit(EXIT_FAILURE);
-    }
-
     char operand_s[100];
 
     while (!feof(stdin) && (address < end)) {
@@ -1213,11 +1208,6 @@ void disasm(unsigned long int start, unsigned long int end) {
 
 void dumpbytes(uint32_t start, uint32_t end) {
     address = start;
-    if (address < romstart) {
-        fprintf(stderr, "Address < RomStart in dumpbytes()!\n");
-        exit(EXIT_FAILURE);
-    }
-
     while (!feof(stdin) && (address <= end)) {
         const uint32_t remaining_bytes = end - address + 1;
         int bytes_to_print = (remaining_bytes > 8) ? 8 : remaining_bytes;
@@ -1238,11 +1228,6 @@ void dumpbytes(uint32_t start, uint32_t end) {
 
 void dumpwords(uint32_t start, uint32_t end) {
     address = start;
-    if (address < romstart) {
-        fprintf(stderr, "Address < RomStart in dumpwords()!\n");
-        exit(EXIT_FAILURE);
-    }
-
     while (!feof(stdin) && (address <= end)) {
         const uint32_t remaining_words = (end - address + 1) / 2;
         int words_to_print = (remaining_words > 8) ? 8 : remaining_words;
@@ -1262,11 +1247,6 @@ void dumpwords(uint32_t start, uint32_t end) {
 
 void dumplongs(uint32_t start, uint32_t end) {
     address = start;
-    if (address < romstart) {
-        fprintf(stderr, "Address < RomStart in dumplongs()!\n");
-        exit(EXIT_FAILURE);
-    }
-
     while (!feof(stdin) && (address <= end)) {
         uint32_t remaining_longs = (end - address + 1) / 4;
         int longs_to_print = (remaining_longs > 4) ? 4 : remaining_longs;
@@ -1287,11 +1267,6 @@ void dumplongs(uint32_t start, uint32_t end) {
 
 void dumptext(uint32_t start, uint32_t end) {
     address = start;
-    if (address < romstart) {
-        fprintf(stderr, "Address < RomStart in dumptext()!\n");
-        exit(EXIT_FAILURE);
-    }
-
     while (!feof(stdin) && (address <= end)) {
         const uint32_t remaining_bytes = end - address + 1;
         int bytes_to_print = (remaining_bytes > 48) ? 48 : remaining_bytes;
@@ -1329,11 +1304,6 @@ void dumptext(uint32_t start, uint32_t end) {
 
 void rsvdblock(uint32_t start, uint32_t end) {
     address = start;
-    if (address < romstart) {
-        fprintf(stderr, "Address < RomStart in rsvdblock()!\n");
-        exit(EXIT_FAILURE);
-    }
-
     uint32_t bytes_to_skip = end - start + 1;
 
     print_address(address);
@@ -1411,6 +1381,11 @@ int main(int argc, char *argv[]) {
 
     size_t index = 0;
     while (map[index].type != End) {
+        if (map[index].start < romstart) {
+            fprintf(stderr, "Address %x < RomStart!\n", map[index].start);
+            exit(EXIT_FAILURE);
+        }
+
         if (map[index].start > map[index].end)
         {
             fprintf(stderr, "Start address %x > End address %x in line %ld\n",
