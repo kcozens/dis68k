@@ -311,11 +311,10 @@ int getmode(int instruction) {
     const int reg = instruction & 0x0007;
 
     if (mode == 7) {
-        if (reg >= 5) {
+        if (reg >= 5)
             return 12; /* i.e. invalid */
-        } else {
-            return 7 + reg;
-        }
+
+        return 7 + reg;
     }
     return mode;
 }
