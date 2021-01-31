@@ -146,6 +146,15 @@ bool readmap(const char *filename) {
                     fprintf(stderr, "Couldn't parse type '%s' in map file at line %lu\n", type, index+2);
                     return false;
                 }
+
+                if ((map[index].type == Word || map[index].type == Long) &&
+                    map[index].start & 1)
+                {
+                    fprintf(stderr, "Address block %x must be word aligned in line %ld\n",
+                            map[index].start, index);
+                    return false;
+                }
+
                 ++ index;
             } else {
                 if (items_read > 0) {
