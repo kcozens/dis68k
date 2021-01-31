@@ -60,8 +60,8 @@ bool rawmode = false;
 
 struct MapEntry {
     uint32_t start;
-    uint32_t end;
     enum Type {
+        Unknown,
         End,
         Byte,
         Word,
@@ -104,7 +104,6 @@ bool readmap(const char *filename) {
     if (fmap == NULL) {
         romstart = 0;
         map[0].start = 0L;
-        map[0].end = 0xffffffff;
         map[0].type = Code;
         map[1].type = End;
     } else {
@@ -116,11 +115,11 @@ bool readmap(const char *filename) {
         size_t index = 0;
 
         while (true) {
-            uint32_t start, end;
+            uint32_t start;
             char type[10];
 
-            const int items_read = fscanf(fmap, "%x,%x,%9s", &start, &end, type);
-            if (items_read == 3) {
+            const int items_read = fscanf(fmap, "%x,%9s", &start, type);
+            if (items_read == 2) {
                 if (index+1 >= allocated_map_size) {
                     // Default to 16 entries when first creating a map, double each time the existing
                     // estimate isn't enough for both this entry and the terminator yet to come.
@@ -134,16 +133,16 @@ bool readmap(const char *filename) {
                 }
 
                 map[index].start = start;
-                map[index].end = end;
-                map[index].type = End;
+                map[index].type = Unknown;
                 if (strcmp(type,"byte")==0) map[index].type = Byte;
                 if (strcmp(type,"word")==0) map[index].type = Word;
                 if (strcmp(type,"long")==0) map[index].type = Long;
                 if (strcmp(type,"text")==0) map[index].type = Text;
                 if (strcmp(type,"rsvd")==0) map[index].type = Rsvd;
                 if (strcmp(type,"code")==0) map[index].type = Code;
+                if (strcmp(type,"end")==0)  map[index].type = End;
 
-                if (map[index].type == End) {
+                if (map[index].type == Unknown) {
                     fprintf(stderr, "Couldn't parse type '%s' in map file at line %lu\n", type, index+2);
                     return false;
                 }
@@ -157,6 +156,7 @@ bool readmap(const char *filename) {
             }
         }
 
+        map[index].start = 0xffffffff;
         map[index].type = End;
         fclose(fmap);
     }
@@ -1207,8 +1207,8 @@ void disasm(unsigned long int start, unsigned long int end) {
 
 void dumpbytes(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address <= end)) {
-        const uint32_t remaining_bytes = end - address + 1;
+    while (!feof(stdin) && (address < end)) {
+        const uint32_t remaining_bytes = end - address;
         int bytes_to_print = (remaining_bytes > 8) ? 8 : remaining_bytes;
 
         print_address(address);
@@ -1227,8 +1227,8 @@ void dumpbytes(uint32_t start, uint32_t end) {
 
 void dumpwords(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address <= end)) {
-        const uint32_t remaining_words = (end - address + 1) / 2;
+    while (!feof(stdin) && (address < end)) {
+        const uint32_t remaining_words = (end - address) / 2;
         int words_to_print = (remaining_words > 8) ? 8 : remaining_words;
 
         print_address(address);
@@ -1246,8 +1246,8 @@ void dumpwords(uint32_t start, uint32_t end) {
 
 void dumplongs(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address <= end)) {
-        uint32_t remaining_longs = (end - address + 1) / 4;
+    while (!feof(stdin) && (address < end)) {
+        uint32_t remaining_longs = (end - address) / 4;
         int longs_to_print = (remaining_longs > 4) ? 4 : remaining_longs;
 
         print_address(address);
@@ -1266,8 +1266,8 @@ void dumplongs(uint32_t start, uint32_t end) {
 
 void dumptext(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address <= end)) {
-        const uint32_t remaining_bytes = end - address + 1;
+    while (!feof(stdin) && (address < end)) {
+        const uint32_t remaining_bytes = end - address;
         int bytes_to_print = (remaining_bytes > 48) ? 48 : remaining_bytes;
         int quote = false;
 
@@ -1303,7 +1303,7 @@ void dumptext(uint32_t start, uint32_t end) {
 
 void rsvdblock(uint32_t start, uint32_t end) {
     address = start;
-    uint32_t bytes_to_skip = end - start + 1;
+    uint32_t bytes_to_skip = end - start;
 
     print_address(address);
     printf("%-9s%u\n", "ds.b", bytes_to_skip);
@@ -1385,10 +1385,10 @@ int main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
 
-        if (map[index].start > map[index].end)
+        if (map[index].start > map[index+1].start)
         {
-            fprintf(stderr, "Start address %x > End address %x in line %ld\n",
-            map[index].start, map[index].end, index);
+            fprintf(stderr, "Address %x is less than address of next block in line %ld\n",
+                    map[index].start, index);
             return EXIT_FAILURE;
         }
 

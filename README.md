@@ -29,17 +29,23 @@ a map file.
 Example map file:
 
     romstart = FC0000
-    FC0000,FC002F,byte
-    FC0030,FEFFFF,code
+    FC0000,byte
+    FC0030,code
+    FF0000,end
 
 This says:
 
 1. the input file data should be located at address `FC0000`.
 2. treat the region starting at `FF0000` and ending at `FC002F` as bytes.
 3. treat the region starting at `FC0030` and ending at `FEFFFF` as code.
+4. stop processing any more data upon reaching address FF0000.
 
 The region types that can be specified are:
-    byte, word, long, text, rsvd, and code.
+    byte, word, long, text, rsvd, code, and end.
+
+Use rsvd to skip a region of memoy where the contents don't matter.
+Use end to mark the end of the input data. The address specified, and
+all later data, will not be decoded and included in the output.
 
 Map files are specified to the disassembler using the `-m` option, e.g.
 
