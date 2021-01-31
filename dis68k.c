@@ -1404,6 +1404,14 @@ int main(int argc, char *argv[]) {
                 break;
         }
         ++ index;
+
+        /* Catch errors in the address of a block following a code block. */
+        if (address > map[index].start)
+        {
+            fprintf(stderr, "Address %x is inside the previous block in line %ld\n",
+                    map[index].start, index);
+            return EXIT_FAILURE;
+        }
     }
     return 0;
 }
