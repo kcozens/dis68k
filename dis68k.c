@@ -150,7 +150,7 @@ bool readmap(const char *filename) {
                 if ((map[index].type == Word || map[index].type == Long) &&
                     map[index].start & 1)
                 {
-                    fprintf(stderr, "Address block %x must be word aligned in line %ld\n",
+                    fprintf(stderr, "Address block %06x must be word aligned in line %ld\n",
                             map[index].start, index);
                     return false;
                 }
@@ -1216,8 +1216,9 @@ void disasm(unsigned long int start, unsigned long int end) {
 
 void dumpbytes(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address < end)) {
-        const uint32_t remaining_bytes = end - address;
+
+    uint32_t remaining_bytes = end - address;
+    while (!feof(stdin) && remaining_bytes > 0) {
         int bytes_to_print = (remaining_bytes > 8) ? 8 : remaining_bytes;
 
         print_address(address);
@@ -1226,9 +1227,9 @@ void dumpbytes(uint32_t start, uint32_t end) {
         while (bytes_to_print-- > 0) {
             const int byte = getbyte();
             printf("$%02x", byte);
-            if (bytes_to_print > 0) {
+            if (bytes_to_print > 0)
                 printf(", ");
-            }
+            --remaining_bytes;
         }
         fputc('\n', stdout);
     }
@@ -1236,8 +1237,9 @@ void dumpbytes(uint32_t start, uint32_t end) {
 
 void dumpwords(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address < end)) {
-        const uint32_t remaining_words = (end - address) / 2;
+
+    uint32_t remaining_words = (end - address) / 2;
+    while (!feof(stdin) && remaining_words > 0) {
         int words_to_print = (remaining_words > 8) ? 8 : remaining_words;
 
         print_address(address);
@@ -1248,6 +1250,7 @@ void dumpwords(uint32_t start, uint32_t end) {
             printf("$%04x", word);
             if (words_to_print > 0)
                 printf(", ");
+            --remaining_words;
         }
         fputc('\n', stdout);
     }
@@ -1255,8 +1258,8 @@ void dumpwords(uint32_t start, uint32_t end) {
 
 void dumplongs(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address < end)) {
-        uint32_t remaining_longs = (end - address) / 4;
+    uint32_t remaining_longs = (end - address) / 4;
+    while (!feof(stdin) && remaining_longs > 0) {
         int longs_to_print = (remaining_longs > 4) ? 4 : remaining_longs;
 
         print_address(address);
@@ -1268,6 +1271,7 @@ void dumplongs(uint32_t start, uint32_t end) {
             printf("$%04x%04x", word1, word2);
             if (longs_to_print > 0)
                 printf(", ");
+            --remaining_longs;
         }
         fputc('\n', stdout);
     }
@@ -1275,8 +1279,9 @@ void dumplongs(uint32_t start, uint32_t end) {
 
 void dumptext(uint32_t start, uint32_t end) {
     address = start;
-    while (!feof(stdin) && (address < end)) {
-        const uint32_t remaining_bytes = end - address;
+
+    uint32_t remaining_bytes = end - address;
+    while (!feof(stdin) && remaining_bytes > 0) {
         int bytes_to_print = (remaining_bytes > 48) ? 48 : remaining_bytes;
         int quote = false;
 
@@ -1301,6 +1306,7 @@ void dumptext(uint32_t start, uint32_t end) {
                     printf(", ");
                 }
             }
+            --remaining_bytes;
         }
         if (quote) {
             printf("'");
