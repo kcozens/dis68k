@@ -1302,6 +1302,8 @@ void dumptext(uint32_t start, uint32_t end) {
                     quote = false;
                 }
                 printf("$%02x", byte);
+                /* A hex byte takes up the space of four characters */
+                bytes_to_print -= 4;
                 if (bytes_to_print > 0) {
                     printf(", ");
                 }
