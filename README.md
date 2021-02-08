@@ -43,7 +43,7 @@ This says:
 The region types that can be specified are:
     byte, word, long, text, rsvd, code, and end.
 
-Use rsvd to skip a region of memoy where the contents don't matter.
+Use rsvd to skip a region of memory where the contents don't matter.
 Use end to mark the end of the input data. The address specified, and
 all later data, will not be decoded and included in the output.
 
